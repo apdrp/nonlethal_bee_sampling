@@ -1,0 +1,27 @@
+{
+    "id": "23A908CB",
+    "path": "~/RStudio/nonlethal_revlitt/nonlethal_script.R",
+    "project_path": "nonlethal_script.R",
+    "type": "r_source",
+    "hash": "1241729698",
+    "contents": "",
+    "dirty": false,
+    "created": 1732136607346.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "22,0",
+        "scrollLine": "13"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1786570519,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1786570519732,
+    "read_only": false,
+    "read_only_alternatives": []
+}
