@@ -106,6 +106,7 @@ topic_plot <- ggplot(topic, aes(x = fct_reorder(study_topic, n), y = n)) +
     axis.title.x = element_text(size = 11),
     plot.margin = margin(10, 40, 10, 10))
 
+
 #figure 2B - wordcloud of keywords
 keywords <- dataset_unique %>%
   separate_rows(keywords, sep = ";\\s*") %>%
@@ -247,6 +248,15 @@ df_upset_twolevel <- df_study %>%
         "\\bgrey sweat bees\\b",
         "\\bhalictidae\\b",
         sep = "|"      )    ),
+    taxa_Other_Apidae = str_detect(
+      taxa_text,
+      str_c(
+        "\\bapidae\\b",
+        "\\bcentris\\b",
+        "\\beucera\\b",
+        sep = "|"
+      )
+    ),
     taxa_Syrphidae = str_detect(
       taxa_text,
       "\\bsyrphidae\\b"  ),
@@ -265,9 +275,13 @@ df_upset_twolevel <- df_study %>%
         "\\bwasps\\b",
         "\\bvespinae\\b",
         "\\bsphecidae\\b",
+        "\\baculeate\\b",
+        sep = "|"  )),
+    taxa_Hymenoptera = str_detect(
+      taxa_text,
+      str_c(
         "\\bhymenoptera\\b",
         "\\bcavity-nesting hymenopterans\\b",
-        "\\baculeate\\b",
         sep = "|"  )),
     taxa_Hemiptera = str_detect(
       taxa_text,
@@ -312,7 +326,9 @@ df_upset_twolevel <- df_study %>%
       "\\bflying insects\\b"),
     morpho_Other_unknown = str_detect(
       taxa_text,
-      "\\bother visitors\\b|\\bother non-bee insects\\b|\\bunknown\\b|\\bother\\b"))
+      "(^|;)\\s*(other|unknown|other visitors|other non-bee insects)\\s*(;|$)"
+    )
+  )
 
 sets_taxa <- names(df_upset_twolevel) %>%
   str_subset("^taxa_") %>%
@@ -329,6 +345,11 @@ set_counts <- df_upset_twolevel %>%
     everything(),
     names_to = "group",
     values_to = "n_studies")
+
+sets_all_plot <- set_counts %>%
+  filter(n_studies > 0) %>%
+  pull(group)
+
 
 sets_taxa_plot <- sets_all_plot[str_detect(sets_all_plot, "^taxa_")]
 sets_morpho_plot <- sets_all_plot[str_detect(sets_all_plot, "^morpho_")]
@@ -382,7 +403,8 @@ p_twolevel <- upset(
       `Intersection size` = theme(
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.title.x = element_blank()
+        axis.title.x = element_blank(),
+        theme_classic()
       )
     )
   )
@@ -507,21 +529,28 @@ tool_protocol <- dataset_unique_methods %>%
     protocol_label = forcats::fct_reorder(protocol_label, protocol_n)
   )
 
-ggplot(tool_protocol, aes(fill=nonlethal_tool, y=n, x=protocol_label)) + 
-  geom_bar(position="fill", stat="identity")+ 
+ggplot(tool_protocol,
+       aes(x = protocol_label,
+           y = n,
+           fill = nonlethal_tool)) +
+  geom_bar(stat = "identity") +
   coord_flip() +
-  labs(x = 'Protocol',
-       y = 'Relative frequency',
-       fill = "Nonlethal tool") +
-  scale_y_continuous(
-    labels = scales::percent_format(accuracy = 1)
-  )+
+  labs(
+    x = "Protocol",
+    y = "Number of studies",
+    fill = "Nonlethal tool"
+  ) +
   scale_fill_brewer(palette = "Set2") +
   theme_bw(base_size = 12) +
   theme(
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     strip.background = element_blank(),
     strip.text = element_text(face = "bold")
-  )
+  ) +
+  guides(fill = guide_legend(nrow = 2))
 
 #figure 6 - time vs distance-standardized protocol
 
