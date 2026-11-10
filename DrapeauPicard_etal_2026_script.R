@@ -1,14 +1,16 @@
 #script for analyses for 
-#A review on the use of nonlethal methods for wild bee sampling 
+#Drapeau Picard et al. - Nonlethal sampling of wild bees: a scoping review of methods, biases and reporting practices
 
 library(tidyverse)
 library(readxl)
-library(treemap)
-library(gridExtra)
 library(ggExtra)
 library(wordcloud2)
 library(ComplexUpset)
 library(patchwork)
+library(htmlwidgets)
+library(webshot2)
+library(png)
+library(grid)
 
 dataset_raw <- read_excel("~/RStudio/nonlethal_revlitt/nonlethal_monitoring_article_data.xlsx", 
                           na = "NA")
@@ -41,7 +43,7 @@ landscape_freq <- long_years_landscape %>%
   summarise(frequency = n(), .groups = "drop")%>%
   mutate(year = factor(year, levels = sort(unique(year))))  
 
-ggplot(landscape_freq,
+landscapeyear_plot <- ggplot(landscape_freq,
        aes(x = factor(year),
            y = frequency,
            fill = landscape)) +
@@ -59,6 +61,16 @@ ggplot(landscape_freq,
     legend.position = c(0.2, 0.7),
     legend.title = element_text(face = "bold")
   )
+
+ggsave(
+  filename = "fig_1_landscapeyear_plot.png",
+  plot = landscapeyear_plot,
+  width = 20,
+  height = 10,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 
 #figure 2A - research topics
 topic <- dataset_unique %>%
@@ -142,7 +154,42 @@ keywords_plot <- keywords %>%
     freq_scaled = log(n)
   )
 
-wordcloud2(data=keywords_plot, size = 0.5)
+wordcloud_plot <- wordcloud2(data=keywords_plot, size = 0.5)
+
+saveWidget(wordcloud_plot, "wordcloud_plot.html", selfcontained = TRUE)
+
+webshot(
+  "wordcloud_plot.html",
+  "wordcloud_plot.png",
+  vwidth = 500,
+  vheight = 500
+)
+
+img <- png::readPNG("wordcloud_plot.png")
+
+wordcloud_plot <- ggplot() +
+  annotation_raster(
+    img,
+    xmin = -Inf, xmax = Inf,
+    ymin = -Inf, ymax = Inf
+  ) +
+  theme_void()
+
+fig2 <-
+  topic_plot +
+  wordcloud_plot +
+  plot_layout(widths = c(1.5, 1.5)) +
+  plot_annotation(tag_levels = "A")
+
+ggsave(
+  filename = "fig_2_wordcloud.png",
+  plot = fig2,
+  width = 25,
+  height = 10,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 
 #figure 3 - sampled taxa
 #UpSet plot####
@@ -416,6 +463,17 @@ p_twolevel <- upset(
   )
 
 p_twolevel
+
+ggsave(
+  filename = "figure_3_upset.png",
+  plot = p_twolevel,
+  width = 20,
+  height = 20,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
 #####
 
 #figure 4 - sampled vs analyzed groups
@@ -529,7 +587,7 @@ tool_protocol <- dataset_unique_methods %>%
     protocol_label = forcats::fct_reorder(protocol_label, protocol_n)
   )
 
-ggplot(tool_protocol,
+protocol_tool <- ggplot(tool_protocol,
        aes(x = protocol_label,
            y = n,
            fill = nonlethal_tool)) +
@@ -552,7 +610,19 @@ ggplot(tool_protocol,
   ) +
   guides(fill = guide_legend(nrow = 2))
 
+ggsave(
+  filename = "figure_4_protocol_tool.png",
+  plot = protocol_tool,
+  width = 20,
+  height = 10,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
 #figure 6 - time vs distance-standardized protocol
+protocol <- dataset_raw%>% 
+  filter(original_data == "1")
 
 protocol_time <- c("timed walks", "point-counts", "timed distance transects")
 
@@ -650,7 +720,7 @@ time_violin <-
     trim = FALSE
   ) +
   scale_fill_manual(values = time_distance_palette) +
-  coord_cartesian(ylim = c(0, 200)) +
+  coord_cartesian(ylim = c(0, 350)) +
   labs(
     x = "Time-based protocols",
     y = "Survey length (minutes)",
@@ -658,7 +728,7 @@ time_violin <-
   ) +
   publication_theme +
   theme(
-        legend.position = c(0.2, 0.8),
+        legend.position = c(0.2, 0.9),
         legend.background = element_rect(fill = "transparent"))
 
 distance_violin <-
@@ -684,3 +754,18 @@ distance_violin <-
 time_violin + distance_violin +
   plot_layout(ncol = 2, widths = c(1.5, 1)) +
   plot_annotation(tag_levels = "A")
+
+combined_violin <-
+  time_violin + distance_violin +
+  plot_layout(ncol = 2, widths = c(1.5, 1)) +
+  plot_annotation(tag_levels = "A")
+
+ggsave(
+  filename = "figure_5_time_distance_violin.png",
+  plot = combined_violin,
+  width = 25,
+  height = 10,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
